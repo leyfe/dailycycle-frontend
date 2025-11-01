@@ -172,22 +172,58 @@ export default function HabitGroup({
       {/* 🔹 Habits anzeigen */}
       {!collapsed && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
-          {list.map((h) => (
-            <HabitCard
-              key={h.id}
-              habit={h}
-              activeDate={activeDate}
-              increment={increment}
-              getDayLimit={getDayLimit}
-              onEditRequest={onEditRequest}
-              onDeleteRequest={onDeleteRequest}
-              onResetTodayRequest={onResetTodayRequest}
-              completions={completions}
-              groupColor={
-                groups.find((g) => g.id === h.group_id)?.color || "slate"
-              }
-            />
-          ))}
+          {clusters.map((cluster, i) => {
+  // alle Habits-Objekte aus den IDs holen
+  const habitsInCluster = cluster.map((id) => byId.get(String(id))).filter(Boolean);
+
+  // Wenn nur 1 Habit → normale Darstellung
+  if (habitsInCluster.length === 1) {
+    const habit = habitsInCluster[0];
+    return (
+      <HabitCard
+        key={habit.id}
+        habit={habit}
+        activeDate={activeDate}
+        increment={increment}
+        getDayLimit={getDayLimit}
+        onEditRequest={onEditRequest}
+        onDeleteRequest={onDeleteRequest}
+        onResetTodayRequest={onResetTodayRequest}
+        completions={completions}
+        groupColor={
+          groups.find((g) => g.id === habit.group_id)?.color || "slate"
+        }
+      />
+    );
+  }
+
+  // Wenn mehrere → in gemeinsamer Card rendern
+  return (
+    <div
+      key={i}
+      className="rounded-2xl border-slate-300 mb-2"
+    >
+      <div className="flex gap-0.5 flex-col">
+        {habitsInCluster.map((habit) => (
+          <HabitCard
+            key={habit.id}
+            habit={habit}
+            activeDate={activeDate}
+            increment={increment}
+            getDayLimit={getDayLimit}
+            onEditRequest={onEditRequest}
+            onDeleteRequest={onDeleteRequest}
+            onResetTodayRequest={onResetTodayRequest}
+            completions={completions}
+            groupColor={
+              groups.find((g) => g.id === habit.group_id)?.color || "slate"
+            }
+          />
+        ))}
+      </div>
+    </div>
+  );
+})}
         </div>
       )}
     </div>

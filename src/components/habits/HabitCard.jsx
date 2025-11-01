@@ -349,7 +349,7 @@ export default function HabitCard({
   };
 
   const cardColor = done
-    ? "bg-slate-300/50 border-slate-200/0 text-slate-400 shadow-none"
+    ? "bg-slate-300 opacity-50 border-slate-200/0 text-slate-400 shadow-none"
     : "bg-slate-100 border-slate-300";
 
   /* -------------------------------- Render -------------------------------- */
@@ -447,7 +447,7 @@ export default function HabitCard({
         </div>
 
         {streak > 1 && (
-        <Chip size="sm" className="flex items-center h-4 bg-slate-400/50 text-slate-200 text-xs">
+        <Chip size="sm" className="flex items-center h-4 bg-slate-400 text-slate-200 text-xs">
             <span>{streak}</span>
         </Chip>
         )}

@@ -54,6 +54,7 @@ const ICON_OPTIONS = [
   { key: "HeartPulse", label: "Gesundheit" },
   { key: "ShowerHead", label: "Duschen" },
   { key: "Stretch", label: "Dehnen" },
+  { key: "EinHundert", label: "100" },
 ];
 
 
