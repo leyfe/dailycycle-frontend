@@ -7,6 +7,7 @@ import {
   DropdownTrigger,
   DropdownMenu,
   DropdownItem,
+  Chip,
 } from "@nextui-org/react";
 import {
   Check,
@@ -17,6 +18,8 @@ import {
   Plus,
   Minus,
 } from "lucide-react";
+import * as Icons from "lucide-react";
+import { CustomIcons } from "../../icons/CustomIcons.jsx";
 import { toISO, addDays } from "../index.js";
 import { toast } from "react-hot-toast";
 import { AppContext } from "../../context/AppContext";
@@ -78,30 +81,44 @@ function periodCount(habit, activeDate, completions) {
 
 /* ---- Symmetrische Verknüpfung: ganze Komponente (vorwärts + rückwärts) ---- */
 
+/* ---- Helpers: IDs immer als String ---- */
+function idOf(h) {
+  return String(h?.id);
+}
+
+function linksOf(h) {
+  return Array.isArray(h?.linked_ids) ? h.linked_ids.map(String) : [];
+}
+
+/* ---- Symmetrische Verknüpfung (vorwärts + rückwärts, typensicher) ---- */
 function getLinkedGroup(habit, allHabits) {
-  const map = new Map(allHabits.map((h) => [h.id, h]));
+  const map = new Map(allHabits.map((h) => [idOf(h), h]));
+  const startId = idOf(habit);
+
   const visited = new Set();
-  const stack = [habit.id];
+  const stack = [startId];
 
   while (stack.length) {
-    const id = stack.pop();
-    if (visited.has(id)) continue;
-    visited.add(id);
+    const curId = stack.pop();
+    if (visited.has(curId)) continue;
+    visited.add(curId);
 
-    const h = map.get(id);
-    const forward = h?.linked_ids ?? [];
+    const h = map.get(curId);
+    if (!h) continue;
 
     // Vorwärtskanten
-    for (const lid of forward) if (!visited.has(lid)) stack.push(lid);
+    for (const lid of linksOf(h)) {
+      if (!visited.has(lid)) stack.push(lid);
+    }
 
-    // Rückwärtskanten: alle, die auf id zeigen
+    // Rückwärtskanten: alle, die auf curId zeigen
     for (const other of allHabits) {
-      if ((other.linked_ids || []).includes(id) && !visited.has(other.id)) {
-        stack.push(other.id);
+      if (linksOf(other).includes(curId) && !visited.has(idOf(other))) {
+        stack.push(idOf(other));
       }
     }
   }
-  return Array.from(visited);
+  return Array.from(visited); // String-IDs
 }
 
 function isAnyOfGroupDone(groupIds, allHabits, activeDate, completions) {
@@ -113,6 +130,71 @@ function isAnyOfGroupDone(groupIds, allHabits, activeDate, completions) {
     if (cnt >= lim) return true;
   }
   return false;
+}
+
+// 🔥 Berechnet den aktuellen Streak (in Tagen, Wochen oder Monaten)
+function calculateStreak(habit, completions) {
+  const by = completions?.[habit.id] || {};
+  const today = new Date();
+
+  // je nach Frequenz unterschiedlich:
+  if (habit.frequency === "täglich" || habit.frequency === "pro_tag") {
+    let streak = 0;
+    for (let i = 0; i < 999; i++) {
+      const d = new Date();
+      d.setDate(today.getDate() - i);
+      const iso = d.toISOString().split("T")[0];
+      if (by[iso] && by[iso] >= (habit.times_per_day || 1)) {
+        streak++;
+      } else {
+        break;
+      }
+    }
+    return streak;
+  }
+
+  if (habit.frequency === "pro_woche") {
+    // Montag bestimmen
+    const getMonday = (date) => {
+      const d = new Date(date);
+      const day = d.getDay();
+      const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+      return new Date(d.setDate(diff));
+    };
+
+    let streak = 0;
+    for (let i = 0; i < 999; i++) {
+      const monday = getMonday(
+        new Date(today.getFullYear(), today.getMonth(), today.getDate() - i * 7)
+      );
+      const isoPrefix = monday.toISOString().split("T")[0].slice(0, 10);
+      const weekSum = Object.entries(by)
+        .filter(([k]) => {
+          const date = new Date(k);
+          return date >= monday && date < new Date(monday.getTime() + 7 * 86400000);
+        })
+        .reduce((sum, [, v]) => sum + v, 0);
+      if (weekSum >= (habit.times_per_week || 1)) streak++;
+      else break;
+    }
+    return streak;
+  }
+
+  if (habit.frequency === "pro_monat") {
+    let streak = 0;
+    for (let i = 0; i < 999; i++) {
+      const d = new Date(today.getFullYear(), today.getMonth() - i, 1);
+      const prefix = d.toISOString().slice(0, 7); // YYYY-MM
+      const monthSum = Object.entries(by)
+        .filter(([k]) => k.startsWith(prefix))
+        .reduce((sum, [, v]) => sum + v, 0);
+      if (monthSum >= (habit.times_per_month || 1)) streak++;
+      else break;
+    }
+    return streak;
+  }
+
+  return 0;
 }
 
 /* --------------------------- Button-Konfetti (Canvas) --------------------------- */
@@ -192,6 +274,7 @@ export default function HabitCard({
   // Eigene Metriken (für Anzeige und Ring)
   const ownLimit = limitFor(habit);
   const ownCount = periodCount(habit, activeDate, completions);
+  const streak = calculateStreak(habit, completions);
 
   // Symmetrische Gruppe + Gruppenerledigung
   const groupIds = getLinkedGroup(habit, allHabits);
@@ -227,10 +310,29 @@ export default function HabitCard({
   const [shake, setShake] = useState(false);
 
   // Long-Press fürs Dropdown
-  const timer = useRef(null);
-  const handlePressStart = () =>
-    (timer.current = setTimeout(() => setMenuOpen(true), 600));
-  const handlePressEnd = () => clearTimeout(timer.current);
+    const timer = useRef(null);
+    const startPos = useRef({ x: 0, y: 0 });
+
+    const handlePressStart = (e) => {
+    const touch = e.touches?.[0];
+    if (touch) startPos.current = { x: touch.clientX, y: touch.clientY };
+
+    timer.current = setTimeout(() => {
+        setMenuOpen(true);
+    }, 600);
+    };
+
+    const handlePressMove = (e) => {
+    const touch = e.touches?.[0];
+    if (!touch || !timer.current) return;
+    const dx = Math.abs(touch.clientX - startPos.current.x);
+    const dy = Math.abs(touch.clientY - startPos.current.y);
+    if (dx > 10 || dy > 10) clearTimeout(timer.current); // Finger bewegt → abbrechen
+    };
+
+    const handlePressEnd = () => {
+    clearTimeout(timer.current);
+    };
 
   const handleIncrement = () => {
     const prevCount = periodCount(habit, activeDate, completions);
@@ -271,6 +373,7 @@ export default function HabitCard({
         handlePressStart();
         setShowWeekDots(true);
       }}
+      onTouchMove={handlePressMove}
       onTouchEnd={() => {
         handlePressEnd();
         setTimeout(() => setShowWeekDots(false), 5000);
@@ -279,13 +382,34 @@ export default function HabitCard({
 
       {/* Kopfzeile */}
       <div className="flex flex-1 items-center justify-between relative z-10">
-        <div className="pl-2">
-          <h3 className="font-semibold -mb-1 text-slate-600 text-md truncate">
-            {habit.name}
-          </h3>
-          <span className="text-xs text-slate-500">
-            {ownCount}/{ownLimit}
-          </span>
+        <div className="flex flex-1 items-center gap-3 pl-1">
+            {habit.icon && (
+            <span className="text-slate-500">
+                {React.createElement(
+                Icons[habit.icon] || CustomIcons[habit.icon] || Icons.HelpCircle,
+                { size: 22 }
+                )}
+            </span>
+            )}
+            <div>
+                <h3 className="font-semibold -mb-1 text-slate-600 text-md truncate">
+                    {habit.name}
+                </h3>
+                <span className="text-xs text-slate-500">
+                    {ownCount}/{ownLimit}{" "}
+                    <span className="opacity-70">
+                        {habit.frequency === "täglich"
+                        ? "täglich"
+                        : habit.frequency === "pro_woche"
+                        ? "wöchentlich"
+                        : habit.frequency === "pro_monat"
+                        ? "monatlich"
+                        : habit.frequency === "pro_jahr"
+                        ? "jährlich"
+                        : ""}
+                    </span>
+                </span>
+            </div>
         </div>
 
         {/* Wochen-Dots (hover/touch) */}
@@ -322,6 +446,12 @@ export default function HabitCard({
           })}
         </div>
 
+        {streak > 1 && (
+        <Chip size="sm" className="flex items-center h-4 bg-slate-400/50 text-slate-200 text-xs">
+            <span>{streak}</span>
+        </Chip>
+        )}
+
         {/* Menü */}
         <Dropdown isOpen={menuOpen} onOpenChange={setMenuOpen}>
           <DropdownTrigger>
@@ -345,7 +475,7 @@ export default function HabitCard({
               if (key === "delete") {
                 toast.custom(
                   (t) => (
-                    <div className="bg-slate-800 text-white px-4 py-3 rounded-xl shadow-lg flex flex-col items-center gap-3">
+                    <div className="bg-slate-500 min-w-[90%] text-slate-200 px-4 py-3 rounded-xl shadow-lg flex flex-col items-center gap-3">
                       <span className="text-sm font-medium">
                         Löschen bestätigen?
                       </span>
@@ -357,7 +487,7 @@ export default function HabitCard({
                           Abbrechen
                         </button>
                         <button
-                          className="px-3 py-1 bg-red-500 rounded-md hover:bg-red-400 transition"
+                          className="px-3 py-1 bg-slate-200 text-slate-500 rounded-md hover:bg-slate-100 transition"
                           onClick={() => {
                             toast.dismiss(t.id);
                             onDeleteRequest(habit);
@@ -459,6 +589,7 @@ export default function HabitCard({
               <Plus className="text-slate-500" size={32} />
             )}
           </Button>
+
         </div>
       </div>
     </Card>

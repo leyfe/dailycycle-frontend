@@ -1,13 +1,22 @@
 // src/App.jsx
+import React, { useContext } from "react";
 import { Routes, Route } from "react-router-dom";
 import { Toaster } from "react-hot-toast";
 import { AppProvider } from "./context/AppContext";
+import { AuthContext } from "./context/AuthContext";
 
+import LoginPage from "./pages/LoginPage";
 import HomePage from "./pages/HomePage";
 import StatsPage from "./pages/StatsPage";
 import SettingsPage from "./pages/SettingsPage";
 
 export default function App() {
+  const { user } = useContext(AuthContext);
+
+  if (!user) {
+    return <LoginPage />;
+  }
+
   return (
     <AppProvider>
       <Toaster position="bottom-center" />

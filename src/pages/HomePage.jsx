@@ -65,7 +65,14 @@ export default function HomePage() {
       if (!by.has(gName)) by.set(gName, []);
       by.get(gName).push(h);
     }
-    return Array.from(by.entries());
+    // sortiere nach der Reihenfolge im groups-Array (das schon sort_order enthält)
+    return Array.from(by.entries()).sort(
+    ([aName], [bName]) => {
+        const aGroup = groups.find((g) => g.name === aName);
+        const bGroup = groups.find((g) => g.name === bName);
+        return (aGroup?.sort_order ?? 999) - (bGroup?.sort_order ?? 999);
+    }
+    );
   }, [habits, groups]);
 
   const doneCount = todos.filter((t) => t.done).length;

@@ -1,13 +1,12 @@
 // src/components/index.js
 
 // 🔹 ISO-Datum zurückgeben (YYYY-MM-DD)
-// gibt YYYY-MM-DD immer in lokaler Zeit zurück
 export function toISO(date) {
   const d = new Date(date);
   d.setHours(0, 0, 0, 0);
   const tzOffset = d.getTimezoneOffset() * 60000;
   const local = new Date(d.getTime() - tzOffset);
-  return local.toISOString().slice(0, 10); // z.B. "2025-10-29"
+  return local.toISOString().slice(0, 10);
 }
 
 // 🔹 Tage addieren
@@ -35,24 +34,42 @@ export const lsSet = (key, val) => {
   }
 };
 
-// ✅ Strato-kompatible API-Wrapper
-// Hinweis: Strato-Server akzeptieren auch `/type=xyz`,
-// da PHP $_SERVER['QUERY_STRING'] korrekt füllt.
-export const API_URL = import.meta.env.VITE_API_URL || null;
+// =======================================================
+// ✅ STRATO-kompatibler API-Wrapper (mit Query-Fix + CORS-freundlich)
+// =======================================================
+export const API_URL = "http://52071041.swh.strato-hosting.eu/habito/habito-api.php";
 
-export async function api(path, options = {}) {
-  // 🔹 sorgt dafür, dass nur genau ein ? existiert
-  const url = path.startsWith("?") ? `${API_URL}${path}` : `${API_URL}?${path}`;
+export async function api(path = "", options = {}) {
+  // Falls path kein ? enthält → automatisch hinzufügen
+  const url = path.startsWith("?")
+    ? `${API_URL}${path}`
+    : `${API_URL}?${path}`;
+
+  const token = JSON.parse(localStorage.getItem("user") || "{}")?.token;
+
+  const headers = {
+    "Content-Type": "application/json",
+    ...(options.headers || {}),
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+  };
 
   try {
-    const response = await fetch(url, options);
-    if (!response.ok) {
-      console.error("API Fehler:", response.status, url);
+    const res = await fetch(url, { ...options, headers });
+
+    // 🟠 CORS / Auth Fehler abfangen
+    if (res.status === 401) {
+      console.warn("⚠️ Token evtl. temporär ungültig – bleibe eingeloggt");
+      return [];
+    }
+
+    if (!res.ok) {
+      console.error(`API Fehler: ${res.status}`, url);
       throw new Error("API error");
     }
-    return await response.json();
+
+    return await res.json();
   } catch (err) {
-    console.error("API Fehler:", err);
-    return null;
+    console.error("❌ Fetch-Fehler:", err.message, url);
+    throw err;
   }
 }

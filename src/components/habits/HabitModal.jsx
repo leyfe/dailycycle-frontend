@@ -13,6 +13,9 @@ import {
 } from "@nextui-org/react";
 import { AppContext } from "../../context/AppContext";
 
+import * as Icons from "lucide-react";
+import { CustomIcons } from "../../icons/CustomIcons.jsx";
+
 export default function HabitModal({
   isOpen,
   onOpenChange,
@@ -31,7 +34,28 @@ export default function HabitModal({
     times_per_year: 1,
     group_id: null,
     linked_ids: [],
+    icon: "",
   });
+
+const ALL_ICONS = { ...Icons, ...CustomIcons };
+
+const ICON_OPTIONS = [
+  { key: "Dumbbell", label: "Workout" },
+  { key: "Boxing", label: "Boxen" },
+  { key: "Running", label: "Laufen" },
+  { key: "BookOpen", label: "Lesen" },
+  { key: "Bike", label: "Radfahren" },
+  { key: "Pill", label: "Vitamine" },
+  { key: "Coffee", label: "Kaffee" },
+  { key: "Moon", label: "Schlaf" },
+  { key: "Apple", label: "Ernährung" },
+  { key: "Brain", label: "Meditation" },
+  { key: "Droplets", label: "Trinken" },
+  { key: "HeartPulse", label: "Gesundheit" },
+  { key: "ShowerHead", label: "Duschen" },
+  { key: "Stretch", label: "Dehnen" },
+];
+
 
   // 🧠 beim Öffnen: Werte aus bestehendem Habit übernehmen
   useEffect(() => {
@@ -46,6 +70,7 @@ export default function HabitModal({
         times_per_year: initialHabit.times_per_year || 1,
         group_id: initialHabit.group_id || null,
         linked_ids: initialHabit.linked_ids || [],
+        icon: initialHabit.icon || "",
       });
     } else {
       setForm({
@@ -66,11 +91,21 @@ export default function HabitModal({
     setForm((f) => ({ ...f, [key]: value }));
   };
 
-  const handleSave = () => {
-    if (!form.name.trim()) return;
-    onSave(form);
-    onOpenChange(false);
-  };
+const handleSave = () => {
+  const newHabit = { ...form };
+  onSave(newHabit);
+
+  // 🧩 Rückwärtsverknüpfung sicherstellen
+  for (const lid of newHabit.linked_ids) {
+    const other = habits.find((h) => h.id === lid);
+    if (other && !other.linked_ids.includes(newHabit.id)) {
+      other.linked_ids = [...other.linked_ids, newHabit.id];
+      onSave(other);
+    }
+  }
+
+  onOpenChange(false);
+};
 
   return (
     <Modal isOpen={isOpen} onOpenChange={onOpenChange} backdrop="blur">
@@ -88,6 +123,26 @@ export default function HabitModal({
                 placeholder="z. B. Lesen, Joggen, Meditation …"
                 autoFocus
               />
+
+            {/* 🧩 Icon-Auswahl */}
+<Select
+  label="Icon"
+  placeholder="Wähle ein Icon"
+  selectedKeys={[form.icon || ""]}
+  onSelectionChange={(v) => handleChange("icon", Array.from(v)[0])}
+>
+  {ICON_OPTIONS.map((opt) => {
+    const IconComp = ALL_ICONS[opt.key] || Icons.HelpCircle;
+    return (
+      <SelectItem
+        key={opt.key}
+        startContent={<IconComp size={18} className="text-slate-600" />}
+      >
+        {opt.label}
+      </SelectItem>
+    );
+  })}
+</Select>
 
               <Select
                 label="Häufigkeit"

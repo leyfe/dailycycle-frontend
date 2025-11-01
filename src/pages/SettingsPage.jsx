@@ -106,42 +106,42 @@ const saveGroup = async (payload) => {
   // 🔹 DnD sensors
   const sensors = useSensors(useSensor(PointerSensor));
 
-    const handleDragEnd = async (event) => {
+  const handleDragEnd = async (event) => {
   const { active, over } = event;
   if (!over || active.id === over.id) return;
 
-  const oldIndex = groups.findIndex((g) => g.id === Number(active.id));
-  const newIndex = groups.findIndex((g) => g.id === Number(over.id));
+  // IDs als String vergleichen
+  const oldIndex = groups.findIndex((g) => String(g.id) === String(active.id));
+  const newIndex = groups.findIndex((g) => String(g.id) === String(over.id));
+  if (oldIndex === -1 || newIndex === -1) return;
 
-  // Neue Reihenfolge lokal berechnen
   const newOrder = arrayMove(groups, oldIndex, newIndex).map((g, i) => ({
     ...g,
     sort_order: i + 1,
   }));
 
-  // Direkt anzeigen (optimistic UI)
+  // Optimistic UI
   setGroups(newOrder);
 
   try {
-    // 🟢 Batch-Request an PHP
+    const payload = newOrder.map((g) => ({ id: g.id, sort_order: g.sort_order }));
     const res = await api("type=groups", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(
-        newOrder.map((g) => ({ id: g.id, sort_order: g.sort_order }))
-      ),
+      body: JSON.stringify(payload),
     });
 
-    if (!res?.ok) throw new Error("Server-Antwort ungültig");
+    // Falls dein API kein {ok:true} liefert: nur auf Fehler prüfen, nicht auf res.ok
+    if (res?.error) throw new Error(res.error);
 
     toast.success("Reihenfolge gespeichert");
-
-    // 🔄 Sicherheitshalber neu laden
-    await new Promise((r) => setTimeout(r, 200));
-    await loadGroups();
+    // Optional: leicht verzögert neu synchronisieren
+    setTimeout(loadGroups, 400);
   } catch (err) {
     console.error("Fehler beim Speichern der Sortierung:", err);
     toast.error("Fehler beim Speichern der Reihenfolge");
+    // Rollback
+    loadGroups();
   }
 };
 
