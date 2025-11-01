@@ -19,9 +19,10 @@ import {
   Minus,
 } from "lucide-react";
 import * as Icons from "lucide-react";
-import { CustomIcons } from "../../icons/CustomIcons.jsx";
+//import { CustomIcons } from "../../icons/CustomIcons.jsx";
 import { toISO, addDays } from "../index.js";
 import { toast } from "react-hot-toast";
+import HabitIntensityModal from "./HabitIntensityModal";
 import { AppContext } from "../../context/AppContext";
 
 /* -------------------------------- Utils -------------------------------- */
@@ -267,7 +268,7 @@ export default function HabitCard({
   completions,
   groupColor = "slate",
 }) {
-  const { habits: allHabits } = useContext(AppContext);
+  const { habits: allHabits, groups } = useContext(AppContext);
 
   const isBadHabit = habit.type === "bad";
 
@@ -308,13 +309,14 @@ export default function HabitCard({
   const [partyMode, setPartyMode] = useState(false);
   const [confetti, setConfetti] = useState(false);
   const [shake, setShake] = useState(false);
+  const [showIntensity, setShowIntensity] = useState(false);
 
   // Long-Press fürs Dropdown
     const timer = useRef(null);
     const startPos = useRef({ x: 0, y: 0 });
 
     const handlePressStart = (e) => {
-    const touch = e.touches?.[0];
+    const touch = e.touches ? e.touches[0] : null;
     if (touch) startPos.current = { x: touch.clientX, y: touch.clientY };
 
     timer.current = setTimeout(() => {
@@ -338,13 +340,26 @@ export default function HabitCard({
     const prevCount = periodCount(habit, activeDate, completions);
     increment(habit.id, activeDate);
     const limit = limitFor(habit);
+
+    // 🔹 Hole die Group anhand der ID
+    const group = groups.find((g) => g.id === habit.group_id);
+    const isSportHabit =
+      group?.name?.toLowerCase().includes("sport") ||
+      group?.name?.toLowerCase().includes("training");
+    
+      console.log("Group found:", group?.name);
+    // ✅ Wenn Sport → Modal öffnen
+    if (isSportHabit) {
+      setTimeout(() => setShowIntensity(true), 300);
+    }
+
     if (prevCount < limit && prevCount + 1 >= limit) {
-        setPartyMode(true);
-        setConfetti(true);
-        setShake(true);
-        setTimeout(() => setPartyMode(false), 800);
-        setTimeout(() => setConfetti(false), 1000);
-        setTimeout(() => setShake(false), 700);
+      setPartyMode(true);
+      setConfetti(true);
+      setShake(true);
+      setTimeout(() => setPartyMode(false), 800);
+      setTimeout(() => setConfetti(false), 1000);
+      setTimeout(() => setShake(false), 700);
     }
   };
 
@@ -386,7 +401,8 @@ export default function HabitCard({
             {habit.icon && (
             <span className="text-slate-500">
                 {React.createElement(
-                Icons[habit.icon] || CustomIcons[habit.icon] || Icons.HelpCircle,
+                Icons[habit.icon] || Icons.HelpCircle,
+                //Icons[habit.icon] || CustomIcons[habit.icon] || Icons.HelpCircle,
                 { size: 22 }
                 )}
             </span>
@@ -592,6 +608,11 @@ export default function HabitCard({
 
         </div>
       </div>
+      <HabitIntensityModal
+        isOpen={showIntensity}
+        habit={habit}
+        onClose={() => setShowIntensity(false)}
+      />
     </Card>
   );
 }

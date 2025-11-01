@@ -14,7 +14,7 @@ import {
 import { AppContext } from "../../context/AppContext";
 
 import * as Icons from "lucide-react";
-import { CustomIcons } from "../../icons/CustomIcons.jsx";
+//import { CustomIcons } from "../../icons/CustomIcons.jsx";
 
 export default function HabitModal({
   isOpen,
@@ -37,8 +37,8 @@ export default function HabitModal({
     icon: "",
   });
 
-const ALL_ICONS = { ...Icons, ...CustomIcons };
-
+//const ALL_ICONS = { ...Icons, ...CustomIcons };
+const ALL_ICONS = { ...Icons };
 const ICON_OPTIONS = [
   { key: "Dumbbell", label: "Workout" },
   { key: "Boxing", label: "Boxen" },
