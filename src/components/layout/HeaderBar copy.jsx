@@ -14,32 +14,32 @@ import clsx from "clsx";
 export default function BottomNav({ onNewHabit, onNewTodo }) {
   const navItems = [
     {
-      to: "/statistics",
-      icon: <BarChart2 size={22} />,
+      to: "/habit",
+      label: "Habit's",
       space: "pr-5 sm:pr-6",
     },
     {
-      to: "/settings",
-      icon: <Settings size={22} />,
+      to: "/todo",
+      label: "Todo's",
       space: "pl-5 sm:pl-6",
     },
   ];
 
   return (
-    <nav className="z-50 border-b-1 pt-6 left-0 right-0 flex justify-around py-3 z-50">
-      {navItems.map(({ to, label, icon, space }) => (
+    <nav className="sticky top-0 pt-12 left-0 right-0 flex justify-around py-3 z-50">
+      {navItems.map(({ to, label, space }) => (
         <NavLink
           key={to}
           to={to}
           className={({ isActive }) =>
-            `${space} flex flex-col items-center gap-1 text-xs transition-colors ${
+            `${space} flex flex-col items-center gap-1 transition-colors ${
               isActive
                 ? `text-slate-500`
                 : "text-slate-500 hover:text-slate-500"
             }`
           }
         >
-          {icon}
+          {label}
         </NavLink>
       ))}
 
