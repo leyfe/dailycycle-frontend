@@ -123,6 +123,7 @@ export default function HomePage() {
         <TodoGroup
             groupName="To-Dos"
             list={todos}
+            activeDate={activeDate}
             toggleTodo={toggleTodo} 
             onEditRequest={(todo) => { setEditTodo(todo); setShowTodoModal(true); }}
             onDeleteRequest={(todo) => deleteTodo(todo.id)}

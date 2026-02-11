@@ -11,7 +11,6 @@ import StatsPage from "./pages/StatsPage";
 import SettingsPage from "./pages/SettingsPage";
 
 export default function App() {
-  console.log("✅ App component loaded");
   const { user } = useContext(AuthContext);
   
   if (!user) {
