@@ -22,16 +22,20 @@ export default function TodoModal({
     name: "",
     due_date: null,
     done: false,
+    createdAt: null,
+    done_at: null,
   });
 
   // Wenn bestehendes Todo übergeben wird → Formular füllen
   useEffect(() => {
     if (initialTodo) {
       setForm({
-        id: initialTodo.id || null,
-        name: initialTodo.name || "",
-        due_date: initialTodo.due_date || null,
-        done: initialTodo.done || false,
+        id: initialTodo.id ?? null,
+        name: initialTodo.name ?? "",
+        due_date: initialTodo.due_date ?? null,
+        done: initialTodo.done ?? false,
+        createdAt: initialTodo.createdAt ?? null,
+        done_at: initialTodo.done_at ?? null,
       });
     } else {
       setForm({
@@ -39,6 +43,8 @@ export default function TodoModal({
         name: "",
         due_date: null,
         done: false,
+        createdAt: null,
+        done_at: null,
       });
     }
   }, [initialTodo]);
@@ -49,7 +55,18 @@ export default function TodoModal({
 
   const handleSave = () => {
     if (!form.name.trim()) return;
-    onSave(form);
+
+    const isNew = !form.id;
+
+    const payload = {
+      ...form,
+      // ID NICHT setzen!
+      createdAt: isNew
+        ? new Date().toISOString()
+        : form.createdAt, // beim Edit beibehalten
+    };
+
+    onSave(payload);
     onOpenChange(false);
   };
 
@@ -59,7 +76,7 @@ export default function TodoModal({
         {(onClose) => (
           <>
             <ModalHeader>
-              {form.id ? "Aufgabe bearbeiten" : "Neue Aufgabe"}
+              {form.id != null ? "Aufgabe bearbeiten" : "Neue Aufgabe"}
             </ModalHeader>
             <ModalBody>
               <Input

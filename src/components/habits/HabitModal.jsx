@@ -80,6 +80,11 @@ export default function HabitModal({
 
   const IconComp = ALL_ICONS[form.icon] || Icons.HelpCircle;
 
+  const selectableHabits = habits
+  .filter((h) => h.id !== form.id) // nicht sich selbst
+  .filter((h) => (form.group_id ? h.group_id === form.group_id : true)); // optional: nur gleiche Gruppe
+
+
   return (
     <Modal className="max-w-[90%] sm:max-w-screen-sm m-auto" isOpen={isOpen} onOpenChange={onOpenChange} size="lg" backdrop="blur" scrollBehavior="inside">
       <ModalContent className="">
@@ -135,10 +140,9 @@ export default function HabitModal({
                   className="mt-2"
                   variant="default"
                   classNames={{
-                    base: "data-[filled=true]:bg-slate-100 data-[focus=true]:bg-slate-100 bg-slate-100 rounded-xl",
-                    inputWrapper: "border-1 border-slate-300 bg-slate-100 group-data-[focus=true]:bg-slate-200 hover:!bg-slate-200",
-                    input: "text-slate-500 placeholder:text-slate-300",
-                    label: "text-slate-500",
+                    base: "data-[filled=true]:bg-neutral-600 data-[focus=true]:bg-neutral-600 bg-neutral-100 rounded-2xl",
+                    inputWrapper: "border-1 border-neutral-600 bg-neutral-800 group-data-[focus=true]:bg-neutral-900 hover:!bg-neutral-900",
+                    input: "text-neutral-300 placeholder:text-neutral-300",
                   }}
 
                 />
@@ -149,12 +153,12 @@ export default function HabitModal({
                     handleChange("icon", Array.from(v)[0])
                   }
                   classNames={{
-                    base: "data-[filled=true]:bg-slate-100 data-[focus=true]:bg-slate-100 bg-slate-100 rounded-xl",
-                    trigger: "border-1 border-slate-300 bg-slate-100 group-data-[focus=true]:bg-slate-200 hover:!bg-slate-200",
-                    value: "text-slate-500",
-                    label: "text-slate-500",
-                    listboxWrapper: "bg-slate-50",
-                    popoverContent: "bg-slate-50",
+                    base: "data-[filled=true]:bg-neutral-800 data-[focus=true]:bg-neutral-800 bg-neutral-100 rounded-2xl",
+                    trigger: "border-1 border-neutral-600 bg-neutral-800 group-data-[focus=true]:bg-neutral-900 hover:!bg-neutral-900",
+                    value: "text-neutral-300",
+                    label: "text-neutral-500",
+                    listboxWrapper: "bg-neutral-800",
+                    popoverContent: "bg-neutral-800",
                   }}
                 >
                   {ICON_OPTIONS.map((opt) => {
@@ -176,10 +180,10 @@ export default function HabitModal({
                   value={form.description}
                   onValueChange={(v) => handleChange("description", v)}
                   classNames={{
-                    base: "data-[filled=true]:bg-slate-100 data-[focus=true]:bg-slate-100 bg-slate-100 rounded-xl",
-                    inputWrapper: "border-1 border-slate-300 bg-slate-100 group-data-[focus=true]:bg-slate-200 hover:!bg-slate-200",
-                    input: "text-slate-500 placeholder:text-slate-300",
-                    label: "text-slate-500",
+                    base: "data-[filled=true]:bg-neutral-800 data-[focus=true]:bg-neutral-800 bg-neutral-100 rounded-2xl",
+                    inputWrapper: "border-1 border-neutral-600 bg-neutral-800 group-data-[focus=true]:bg-neutral-900 hover:!bg-neutral-900",
+                    input: "text-neutral-300 placeholder:text-neutral-300",
+                    label: "text-neutral-500",
                   }}
                 />
               </div>
@@ -201,12 +205,12 @@ export default function HabitModal({
                     );
                   }}
                   classNames={{
-                    base: "data-[filled=true]:bg-slate-100 data-[focus=true]:bg-slate-100 bg-slate-100 rounded-xl",
-                    trigger: "border-1 border-slate-300 bg-slate-100 group-data-[focus=true]:bg-slate-200 hover:!bg-slate-200",
-                    value: "text-slate-500",
-                    label: "text-slate-500",
-                    listboxWrapper: "bg-slate-50",
-                    popoverContent: "bg-slate-50",
+                    base: "data-[filled=true]:bg-neutral-800 data-[focus=true]:bg-neutral-800 bg-neutral-100 rounded-2xl",
+                    trigger: "border-1 border-neutral-600 bg-neutral-800 group-data-[focus=true]:bg-neutral-900 hover:!bg-neutral-900",
+                    value: "text-neutral-300",
+                    label: "text-neutral-500",
+                    listboxWrapper: "bg-neutral-800",
+                    popoverContent: "bg-neutral-800",
                   }}
                 >
                   {groups.map((g) => (
@@ -221,12 +225,12 @@ export default function HabitModal({
                     handleChange("frequency", Array.from(v)[0])
                   }
                   classNames={{
-                    base: "data-[filled=true]:bg-slate-100 data-[focus=true]:bg-slate-100 bg-slate-100 rounded-xl",
-                    trigger: "border-1 border-slate-300 bg-slate-100 group-data-[focus=true]:bg-slate-200 hover:!bg-slate-200",
-                    value: "text-slate-500",
-                    label: "text-slate-500",
-                    listboxWrapper: "bg-slate-50",
-                    popoverContent: "bg-slate-50",
+                    base: "data-[filled=true]:bg-neutral-800 data-[focus=true]:bg-neutral-800 bg-neutral-100 rounded-2xl",
+                    trigger: "border-1 border-neutral-600 bg-neutral-800 group-data-[focus=true]:bg-neutral-900 hover:!bg-neutral-900",
+                    value: "text-neutral-300",
+                    label: "text-neutral-500",
+                    listboxWrapper: "bg-neutral-800",
+                    popoverContent: "bg-neutral-800",
                   }}
                 >
                   <SelectItem key="täglich">Täglich</SelectItem>
@@ -258,13 +262,37 @@ export default function HabitModal({
                     }
                     min={1}
                     classNames={{
-                      base: "data-[filled=true]:bg-slate-100 data-[focus=true]:bg-slate-100 bg-slate-100 rounded-xl",
-                      inputWrapper: "border-1 border-slate-300 bg-slate-100 group-data-[focus=true]:bg-slate-200 hover:!bg-slate-200",
-                      input: "text-slate-500 placeholder:text-slate-300",
-                      label: "text-slate-500",
+                      base: "data-[filled=true]:bg-neutral-800 data-[focus=true]:bg-neutral-800 bg-neutral-100 rounded-2xl",
+                      inputWrapper: "border-1 border-neutral-600 bg-neutral-800 group-data-[focus=true]:bg-neutral-900 hover:!bg-neutral-900",
+                      input: "text-neutral-300 placeholder:text-neutral-500",
+                      label: "text-neutral-500",
                     }}
                   />
                 )}
+
+                <Select
+                  label="Verknüpfen (Cluster)"
+                  selectionMode="multiple"
+                  selectedKeys={new Set((form.linked_ids || []).map(String))}
+                  onSelectionChange={(keys) => {
+                    const ids = Array.from(keys).map((k) => Number(k));
+                    handleChange("linked_ids", ids);
+                  }}
+                  classNames={{
+                    base: "data-[filled=true]:bg-neutral-800 data-[focus=true]:bg-neutral-800 bg-neutral-100 rounded-2xl",
+                    trigger: "border-1 border-neutral-600 bg-neutral-800 group-data-[focus=true]:bg-neutral-900 hover:!bg-neutral-900",
+                    value: "text-neutral-300",
+                    label: "text-neutral-500",
+                    listboxWrapper: "bg-neutral-800",
+                    popoverContent: "bg-neutral-800",
+                  }}
+                >
+                  {selectableHabits.map((h) => (
+                    <SelectItem key={String(h.id)}>
+                      {h.name}
+                    </SelectItem>
+                  ))}
+                </Select>
 
                 <div className="grid grid-cols-2 gap-3">
                   <Input
@@ -273,10 +301,10 @@ export default function HabitModal({
                     value={form.start_date}
                     onValueChange={(v) => handleChange("start_date", v)}
                     classNames={{
-                      base: "data-[filled=true]:bg-slate-100 data-[focus=true]:bg-slate-100 bg-slate-100 rounded-xl",
-                      inputWrapper: "border-1 border-slate-300 bg-slate-100 group-data-[focus=true]:bg-slate-200 hover:!bg-slate-200",
-                      input: "text-slate-500 placeholder:text-slate-300",
-                      label: "text-slate-500",
+                      base: "data-[filled=true]:bg-neutral-800 data-[focus=true]:bg-neutral-800 bg-neutral-100 rounded-2xl",
+                      inputWrapper: "border-1 border-neutral-600 bg-neutral-800 group-data-[focus=true]:bg-neutral-900 hover:!bg-neutral-900",
+                      input: "text-neutral-300 placeholder:text-neutral-500",
+                      label: "text-neutral-500",
                     }}
                   />
                   <Input
@@ -285,10 +313,10 @@ export default function HabitModal({
                     value={form.end_date}
                     onValueChange={(v) => handleChange("end_date", v)}
                     classNames={{
-                      base: "data-[filled=true]:bg-slate-100 data-[focus=true]:bg-slate-100 bg-slate-100 rounded-xl",
-                      inputWrapper: "border-1 border-slate-300 bg-slate-100 group-data-[focus=true]:bg-slate-200 hover:!bg-slate-200",
-                      input: "text-slate-500 placeholder:text-slate-300",
-                      label: "text-slate-500",
+                      base: "data-[filled=true]:bg-neutral-800 data-[focus=true]:bg-neutral-800 bg-neutral-100 rounded-2xl",
+                      inputWrapper: "border-1 border-neutral-600 bg-neutral-800 group-data-[focus=true]:bg-neutral-900 hover:!bg-neutral-900",
+                      input: "text-neutral-300 placeholder:text-neutral-500",
+                      label: "text-neutral-500",
                     }}
                   />
                 </div>

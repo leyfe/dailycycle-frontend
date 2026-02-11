@@ -18,8 +18,8 @@ export default function TodoCard({ todo, toggleTodo, onEdit, onDelete }) {
           color="light"
           onChange={() => toggleTodo(todo)}
             classNames={{
-                wrapper: "bg-slate-400", // Rand
-                icon: "text-white", // Häkchenfarbe
+                wrapper: "bg-slate-400",
+                icon: "text-white",
             }}
         />
         <div className="flex flex-col text-left">
@@ -59,7 +59,7 @@ export default function TodoCard({ todo, toggleTodo, onEdit, onDelete }) {
               isIconOnly
               size="sm"
               variant="light"
-              onPress={() => onDelete(todo)} // ✅ todo, nicht id
+              onPress={() => onDelete(todo)}
             >
               <Trash2 className="text-slate-500" size={16} />
             </Button>

@@ -160,13 +160,22 @@ export function AppProvider({ children }) {
   };
 
   const toggleTodo = async (todo) => {
-    const upd = { ...todo, done: !todo.done };
+    const nowIso = new Date().toISOString();
+    const nextDone = !todo.done;
+    console.log(`Toggling todo "${todo.name}" (ID: ${todo.id}) to ${nextDone ? "done" : "not done"}`); // Debug-Log
+    const upd = {
+      ...todo,
+      done: nextDone,
+      done_at: nextDone ? nowIso : null
+    };
+  console.log("API Payload:", upd); // Debug-Log
     await apiAuth(`type=todos&id=${todo.id}`, {
       method: "POST",
       body: JSON.stringify(upd),
     });
-    setTodos((ts) => {
-      const arr = ts.map((t) => (t.id === todo.id ? upd : t));
+
+    setTodos((prev) => {
+      const arr = [upd, ...prev.filter((t) => Number(t.id) !== Number(todo.id))];
       lsSet("dailycycle.todos", arr);
       return arr;
     });
@@ -174,33 +183,59 @@ export function AppProvider({ children }) {
 
   const saveTodo = async (payload) => {
     try {
-      if (payload.id && Number(payload.id) > 0) {
-        await apiAuth(`type=todos&id=${payload.id}`, {
-          method: "POST",
-          body: JSON.stringify(payload),
-        });
-        setTodos((todos) => {
-          const updated = todos.map((t) =>
-            Number(t.id) === Number(payload.id) ? { ...t, ...payload } : t
-          );
-          lsSet("dailycycle.todos", updated);
-          return updated;
-        });
-        toast.success(`"${payload.name}" aktualisiert ✅`);
-        return;
+      const nowIso = new Date().toISOString();
+
+      // UPDATE (Bearbeiten)
+      if (payload.id != null) {
+        const existing = todos.find((t) => Number(t.id) === Number(payload.id));
+
+        // Wenn wir das Todo lokal kennen => echtes Update
+        if (existing) {
+          const merged = {
+            ...existing,
+            ...payload,
+            createdAt: existing.createdAt ?? payload.createdAt ?? nowIso,
+          };
+
+          merged.done_at = merged.done
+            ? (payload.done_at ?? existing.done_at ?? merged.createdAt ?? nowIso)
+            : null;
+
+          await apiAuth(`type=todos&id=${payload.id}`, {
+            method: "POST",
+            body: JSON.stringify(merged),
+          });
+
+          // replace statt map (stabil gegen Doppelte)
+          setTodos((prev) => {
+            const arr = [merged, ...prev.filter((t) => Number(t.id) !== Number(payload.id))];
+            lsSet("dailycycle.todos", arr);
+            return arr;
+          });
+
+          toast.success(`"${merged.name}" aktualisiert ✅`);
+          return;
+        }
+        // Wenn nicht gefunden => fällt durch zu CREATE (z.B. alte/temporäre ID)
       }
-      const created = await apiAuth("type=todos", {
+
+      // CREATE (Neu) 
+      const body = {
+        ...payload,
+        createdAt: payload.createdAt ?? nowIso,
+        done: false,
+        done_at: null,
+      };
+
+      await apiAuth("type=todos", {
         method: "POST",
-        body: JSON.stringify(payload),
+        body: JSON.stringify(body),
       });
-      const id = created?.id || (Math.random() * 1e9) | 0;
-      const newTodo = { id, ...payload, done: false };
-      setTodos((todos) => {
-        const arr = [newTodo, ...todos];
-        lsSet("dailycycle.todos", arr);
-        return arr;
-      });
-      toast.success(`"${payload.name}" hinzugefügt ✨`);
+
+      // ✅ Wichtig: direkt neu laden, damit wir die echte Backend-ID bekommen
+      await loadAll();
+
+      toast.success(`"${body.name}" hinzugefügt ✨`);
     } catch (err) {
       console.error("❌ Fehler beim Speichern des Todos:", err);
       toast.error("Fehler beim Speichern der Aufgabe");
